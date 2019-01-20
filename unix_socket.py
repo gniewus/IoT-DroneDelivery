@@ -18,7 +18,7 @@ parser.add_argument('--drone_address', help="Set connection string to drone (or 
 
 ctrl = None #DroneController('udp:127.0.0.1:14550')
 
-class UnixSocket(object):
+class MissionController(object):
     def __init__(self,UDP_IP="127.0.0.1",HOST_PORT=5005,CLIENT_PORT=5006):
         self.host = UDP_IP
         self.port = HOST_PORT
@@ -91,7 +91,7 @@ class UnixSocket(object):
 
     def run_udp_client(self):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        
+
     def sendStats(self,object):
         obj = json.dumps(object)
         self.sock.sendall(obj)
@@ -105,17 +105,9 @@ if __name__ == '__main__':
         ctrl = DroneController(connection_string=str(args.drone_address))
     else:    
         ctrl = DroneController()
-    us = UnixSocket()
-    us.run_unix_domain_socket_server()
+    ms = MissionController()
+    ms.run_unix_domain_socket_server()
 
-def _parseParameter(el):
-    try:
-        host = el.split[":"][0]
-        port = el.split[":"][1]
-        return (host,port)
-    except Exception as err:
-        return None
-        pass
     
     
     

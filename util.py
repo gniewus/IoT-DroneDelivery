@@ -2,7 +2,6 @@ import json
 
 class Util(object):
 
-
     def json_load_byteified(self, file_handle):
         return self._byteify(
             json.load(file_handle, object_hook=self._byteify),

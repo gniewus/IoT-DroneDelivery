@@ -91,29 +91,7 @@ class UnixSocket(object):
 
     def run_udp_client(self):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    def run_unix_domain_socket_client(self):
-        """ Run a Unix domain socket client """
-
-        self.sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-        # Connect the socket to the path where the server is listening
-        server_address = self.server_path
-        print("connecting to %s" % server_address)
-        try:
-            self.sock.connect((self.server_path))
-        except socket.error, msg:
-            print(sys.stderr, msg)
-            sys.exit(1)
-        try:
-            message = "This is the test message."
-            print("Sending [%s]" % message)
-            self.sock.sendall(json.dumps(message))
-            while amount_received < amount_expected:
-                data = self.sock.recv(16)
-                print >> sys.stderr, "Received [%s]" % data
-        finally:
-            print("Closing client")
-            self.sock.close()
-    
+        
     def sendStats(self,object):
         obj = json.dumps(object)
         self.sock.sendall(obj)

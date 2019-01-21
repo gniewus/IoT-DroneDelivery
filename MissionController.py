@@ -11,24 +11,50 @@ from Controller import DroneController
 import thread
 util = Util()
 
-parser = argparse.ArgumentParser(description='This module acts as a message broker and controller between UDP Client and ArduCopter.')
-parser.add_argument('--client', help="Type in client host and port in form HOST:PORT")
-parser.add_argument('--server', help="Type in server host and port in form HOST:PORT")
+parser = argparse.ArgumentParser(description='This module acts as a message broker and mission controller between UDP Client and ArduCopter.')
+#parser.add_argument('--client', help="Type in client host and port in form HOST:PORT")
+#parser.add_argument('--server', help="Type in server host and port in form HOST:PORT")
 parser.add_argument('--drone_address', help="Set connection string to drone (or SITL)")
 
 ctrl = None #DroneController('udp:127.0.0.1:14550')
 
 class MissionController(object):
-    def __init__(self,UDP_IP="127.0.0.1",HOST_PORT=5005,CLIENT_PORT=5006):
+    def __init__(self,UDP_IP="127.0.0.1",HOST_PORT=5005,CLIENT_PORT=5006,drone_address=""):
+    
+        """ This module acts as a message broker and mission controller between UDP Client and ArduCopter.
+            It takes as a parameters 
+        """
         self.host = UDP_IP
         self.port = HOST_PORT
-
         self.HOST_SERVER_ADDRESS = (UDP_IP,HOST_PORT)
         self.NODE_SERVER_ADDRESS =(UDP_IP,CLIENT_PORT)
+
+        print("Connecting to "+ drone_address)
+        self.controller = DroneController(connection_string=drone_address)
+        try:
+            self.controller.connect()
+            pass
+        # Bad TCP connection
+        except socket.error:
+            print
+            'No server exists!'
+        # Bad TTY connection
+        except exceptions.OSError as e:
+            print
+            'No serial exists!'
+        # API Error
+        except dronekit.APIException:
+            print
+            'Timeout!'
+        # Other error
+        except Exception as e:
+            print('Some other error!'+e.message)
         
-    def run_unix_domain_socket_server(self,host=None,port=None):
-        self.controller = ctrl
-        self.controller.connect()
+
+       
+        
+    def run_udp_socket_server(self,host=None,port=None):
+        
         self.run_udp_client()
         if host and port:
             self.host = host;
@@ -37,6 +63,8 @@ class MissionController(object):
         self.server = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.server.bind((self.host,self.port))
         print("Listening on path: %s:%s" % (self.host,self.port))
+        
+        thread.start_new_thread(self.broadcast_status,())
         while True:
             datagram = self.server.recv(1024)
             if not datagram:
@@ -55,32 +83,50 @@ class MissionController(object):
         payload = {}
         if dt.get('type')=="Launch":
             print("Launchig procedure comand received")
-            ctrl.connect()
-            thread.start_new_thread(ctrl.launch,())
+            thread.start_new_thread(self.controller.launch,())
             pass
         elif dt.get("type")=="Land":
             print("Launching procedure command received") 
-            ctrl.land()
+            self.controller.land()
         elif dt.get('type')=="GoTo":
-            print(dt.get("data"))
-            ctrl.goto([52.516783, 13.323896],30)
+            tmp = dt.get("data")
+            tmp = tmp.get("latlong")
+            print(tmp,tmp[0])
+            
+            self.controller.goto(tmp,30)
         elif dt.get('type')=="Status":
-            print("Status")
             if self.controller:
-                payload ={"bat":ctrl.vehicle.battery.__str__(),
-                "gps":ctrl.vehicle.gps_0.__str__(),
-                "alt":ctrl.altitude.__str__(),
-                "loc":ctrl.vehicle.location.global_frame.__str__(),
-                "airspeed": ctrl.vehicle.airspeed.__str__()
-                }
+                payload =self.prepareStatusMsg()
             else:
                 payload = {"GPS":"Test","Bat":200}
 
         self.sendMessage(data=payload)
+
+    def prepareStatusMsg(self):
+        try:
+            return {"bat":self.controller.vehicle.battery.__str__(),
+                "gps":self.controller.vehicle.gps_0.__str__(),
+                "alt":self.controller.altitude.__str__(),
+                "loc":self.controller.vehicle.location.global_frame.__str__(),
+                "airspeed": self.controller.vehicle.airspeed.__str__(),
+                "groundspeed":self.controller.vehicle.airspeed.__str__()
+                }   
+        except AttributeError as err:
+            return{"message":"Device not ready "}
             
+
     def sendMessage(self,type='message',data={}):
+        try:
             dump = json.dumps({"type":"message",'data':data})
             self.server.sendto(dump+"\f",self.NODE_SERVER_ADDRESS)
+        except AttributeError as err:
+            print("Send failed. Waiting for server. ")
+            pass
+    def broadcast_status(self):
+        while True:
+            msg = self.prepareStatusMsg()
+            self.sendMessage(type="Status",data=msg)
+            time.sleep(1)
 
     def closeServer(self):
         print("-" * 20)
@@ -92,21 +138,17 @@ class MissionController(object):
     def run_udp_client(self):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-    def sendStats(self,object):
-        obj = json.dumps(object)
-        self.sock.sendall(obj)
 
 
 
 if __name__ == '__main__':
     args = parser.parse_args()
     if args.drone_address:
-        print (args.drone_address+" was given")
-        ctrl = DroneController(connection_string=str(args.drone_address))
+        ms = MissionController(drone_address=args.drone_address)
     else:    
-        ctrl = DroneController()
-    ms = MissionController()
-    ms.run_unix_domain_socket_server()
+        ms = MissionController()
+    
+    ms.run_udp_socket_server()
 
     
     

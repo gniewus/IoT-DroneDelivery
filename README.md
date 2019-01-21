@@ -2,15 +2,24 @@
 
 
 This repository includes:
-- drone controller (dronekit)
-- Python UDP server/client app 
-- NodeJS UDP server/client app
+- Python (dronekit) drone controller app
+- Python UDP server/client wrapper
+- NodeJS UDP server/client connector
 
 ```
 pip install -r requirements.txt
 ```
 Starting DroneController:
-``` python  ```
+
+``` python MissionController.py  ```
+
+Mission controller takes ```--drone_address``` parameter which should be a UDP/TCP MavLink connection string. Eighter directly from the ArduCopter or through mavproxy.py
+
+
+Starting NodeUDP Connector
+
+``` node Connector.js ```
+
 
 Ernst-Reuter:52.512904, 13.322384
 

@@ -13,7 +13,7 @@ class DroneController(object):
             self.connection_string = self._start_SITL()        
         
         self.vehicle= vehicle
-        
+        self.mission_start_location=[]
         
     def _log(self, message):
         print("[DEBUG]: {0}".format(message))
@@ -22,35 +22,23 @@ class DroneController(object):
         self.gps_lock = False
         self.altitude = 0.0
         self.current_status ={}
-        try:
-            self.vehicle = dronekit.connect(self.connection_string, heartbeat_timeout=15, wait_ready=True)
-            # Connect to the Vehicle
-            self._log('Connected to vehicle.')
-            self.commands = self.vehicle.commands
-            self.current_coords = []
-            # Get Vehicle Home location - will be `None` until first set by autopilot
-            while not self.vehicle.home_location:
-                self.cmds = self.vehicle.commands
-                self.cmds.download()
-                self.cmds.wait_ready()
-                if not self.vehicle.home_location:
-                    print(" Waiting for home location...")
-            self._log("Drone app started")
-        # Bad TCP connection
-        except socket.error:
-            print
-            'No server exists!'
-        # Bad TTY connection
-        except exceptions.OSError as e:
-            print
-            'No serial exists!'
-        # API Error
-        except dronekit.APIException:
-            print
-            'Timeout!'
-        # Other error
-        except Exception as e:
-            print('Some other error!'+e.message)
+    
+        self.vehicle = dronekit.connect(self.connection_string, heartbeat_timeout=15, wait_ready=True)
+        # Connect to the Vehicle
+        self._log('Connected to vehicle.')
+        self.commands = self.vehicle.commands
+        self.current_coords = []
+        # Get Vehicle Home location - will be `None` until first set by autopilot
+        while not self.vehicle.home_location:
+            self.cmds = self.vehicle.commands
+            self.cmds.download()
+            self.cmds.wait_ready()
+            if not self.vehicle.home_location:
+                self._log(" Waiting for home location...")
+            time.sleep(2)
+        self.mission_start_location=[self.vehicle.home_location.lat,self.vehicle.home_location.lat]
+        self._log("Drone app started")
+
 
     def takeoff(self,aTargetAltitude=30):
         self.arm()
@@ -166,7 +154,12 @@ class DroneController(object):
 
     def _start_SITL(self):
         import dronekit_sitl
-        sitl = dronekit_sitl.start_default()
+        sitl = SITL()
+        print("sdsaass"*20)
+        sitl.download("copter", "3.5", verbose=False) # ...or download system (e.g. "copter") and version (e.g. "3.3")
+        sitl.launch(args, verbose=False, await_ready=False, restart=False)
+        sitl.block_until_ready(verbose=False) # explicitly wait until receiving commands
+        code = sitl.complete(verbose=False) # wait until exit
         connection_string = sitl.connection_string()
         return connection_string
 

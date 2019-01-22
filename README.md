@@ -7,7 +7,9 @@ This repository includes:
 - Python UDP server/client wrapper
 - NodeJS UDP server/client connector
 
-![Alt text](NavioControllerDiagram.png?raw=true "Diagram")
+![Alt text](NavioControllerDiagram.jpg?raw=true "Diagram")
+
+
 
 
 ```
@@ -23,7 +25,8 @@ Starting NodeUDP Connector
 
 ``` node Connector.js ```
 
-After booting up and succesfull connecting to the drone, MissionCotroller listens to UDP port for incoming messages from NodeServer. In background it sends every second a complete list of drone paramaeters in JSON format. 
+After booting up and successfully connecting to the drone, MissionController listens to UDP port for incoming messages from NodeServer.
+In background it sends every second a complete list of drone parameters in JSON format.
 
 
 
@@ -34,4 +37,6 @@ Ernst-Reuter:52.512904, 13.322384
 ```$ dronekit-sitl copter --home 52.512904,13.322384,30,354  ```
 
 ```$ sim_vehicle --l 52.512904,13.322384,30,354  --mode quad```
+
+```$ sim_vehicle --l TEL --no-mavproxy --mode quad```
 

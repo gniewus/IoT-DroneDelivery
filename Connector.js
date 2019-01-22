@@ -6,7 +6,7 @@ const pythonServer ={
     port    : 5005
 };
 
-console.dir(argv);
+//console.dir(argv);
 
 
 ipc.config.id = 'ConnectorIPC';
@@ -27,12 +27,25 @@ ipc.serveNet(
                     let latLongAlt = locArray.map((e)=>{
                         return e.split("=")[1]
                     })
-                
-                    var dist = getDistanceFromLatLonInMeters(52.516783, 13.323896,latLongAlt[0],latLongAlt[1])
-                    console.log("Distance form target "+dist)
-                    if(dist < 10){
+                    let landed = false;
+                    let comingHome = false;
+                    //var dist = getDistanceFromLatLonInMeters(52.516783, 13.323896,latLongAlt[0],latLongAlt[1])
+                    //console.log("Distance form target "+dist)
+                    // if(dist < 16080406.0554759 && !landed && !comingHome){
+                    //     ipc.server.emit(pythonServer,'Land',{id:"NodeClient",message:{}})
+                    //     landed = true;
+                    // }
+                }
+                if(data.Operation){
+                    if(data.Operation =="GoTo" && data.Status=="Success"){
                         ipc.server.emit(pythonServer,'Land',{id:"NodeClient",message:{}})
+                    }else if(data.Operation =="Launch" && data.Status=="Success"){
+                        ipc.server.emit(pythonServer,'GoTo',{id:"NodeClient",alt:30,latlong:[52.516783, 13.323896]})
+
+                    }else if(data.Operation =="TakeOff" && data.Status=="Success"){
+                        ipc.server.emit(pythonServer,'GoTo',{id:"NodeClient",alt:30,latlong:[52.516783, 13.323896]})
                     }
+
                 }
             }
         );
@@ -47,10 +60,6 @@ ipc.server.on("start",()=>{
    ipc.server.emit(pythonServer,'Launch',{id:"NodeClient",message:{}})
     //ipc.server.emit(pythonServer,'GoTo',{id:"NodeClient",alt:30,latlong:[52.516783, 13.323896]})
 })
-
-setTimeout(function (params) {
-    ipc.server.emit(pythonServer,'GoTo',{id:"NodeClient",alt:30,latlong:[52.516783, 13.323896]})
-},25000)
 
 function getDistanceFromLatLonInMeters(lat1,lon1,lat2,lon2) {
     var R = 6371000; // Radius of the earth in m

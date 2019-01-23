@@ -1,5 +1,5 @@
 import json
-
+from dronekit import LocationGlobal, LocationGlobalRelative
 class Util(object):
 
     def json_load_byteified(self, file_handle):
